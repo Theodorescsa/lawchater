@@ -1,26 +1,26 @@
 services:
-  llama:
-    image: ghcr.io/ggerganov/llama.cpp:server-cuda
-    container_name: llama-server
-    gpus: all
-    command:
-      - "-m"
-      - "/models/qwen1_5-1_8b-chat-q8_0.gguf"
-      - "-c"
-      - "4096"
-      - "-b"
-      - "4096"
-      - "-ngl"
-      - "99"
-      - "--host"
-      - "0.0.0.0"
-      - "--port"
-      - "8080"
-    volumes:
-      - ./core/models:/models
-    ports:
-      - "8080:8080"
-    restart: unless-stopped
+  # llama:
+  #   image: ghcr.io/ggerganov/llama.cpp:server-cuda
+  #   container_name: llama-server
+  #   gpus: all
+  #   command:
+  #     - "-m"
+  #     - "/models/qwen1_5-1_8b-chat-q8_0.gguf"
+  #     - "-c"
+  #     - "4096"
+  #     - "-b"
+  #     - "4096"
+  #     - "-ngl"
+  #     - "99"
+  #     - "--host"
+  #     - "0.0.0.0"
+  #     - "--port"
+  #     - "8080"
+  #   volumes:
+  #     - ./core/models:/models
+  #   ports:
+  #     - "8080:8080"
+  #   restart: unless-stopped
 
   web:
     build: .
