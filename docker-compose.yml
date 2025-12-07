@@ -33,7 +33,7 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      - llama
+      # - llama
       - mysql          # <-- CHỜ MYSQL READY
     environment:
       - HF_HOME=/app/core/hf_cache
