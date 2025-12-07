@@ -1,0 +1,32 @@
+# Django
+Django>=4.2,<5.0
+djangorestframework>=3.14.0
+django-cors-headers>=4.3.0
+
+# AI/ML
+# torch
+# transformers==4.44.2
+# sentence-transformers==3.0.1
+
+# LangChain
+# langchain>=0.1.0
+# langchain-community>=0.0.20
+# langchain-text-splitters>=0.0.1
+# langchain-chroma>=0.1.0
+# langchain-huggingface>=0.0.1
+# langchain-openai>=0.0.5
+
+# Vector Database
+# chromadb>=0.4.22
+
+# Document Processing
+docx2txt>=0.8
+pypdf>=3.17.0
+
+# Utils
+python-dotenv>=1.0.0
+drf-spectacular
+drf-spectacular-sidecar
+
+djangorestframework-simplejwt
+mysqlclient

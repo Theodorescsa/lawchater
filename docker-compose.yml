@@ -1,0 +1,73 @@
+services:
+  llama:
+    image: ghcr.io/ggerganov/llama.cpp:server-cuda
+    container_name: llama-server
+    gpus: all
+    command:
+      - "-m"
+      - "/models/qwen1_5-1_8b-chat-q8_0.gguf"
+      - "-c"
+      - "4096"
+      - "-b"
+      - "4096"
+      - "-ngl"
+      - "99"
+      - "--host"
+      - "0.0.0.0"
+      - "--port"
+      - "8080"
+    volumes:
+      - ./core/models:/models
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+  web:
+    build: .
+    container_name: lawchat-django
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+      - ./core/chroma_db:/app/core/chroma_db 
+      - ./core/hf_cache:/app/core/hf_cache
+    ports:
+      - "8000:8000"
+    depends_on:
+      - llama
+      - mysql          # <-- CHỜ MYSQL READY
+    environment:
+      - HF_HOME=/app/core/hf_cache
+      - LLM_BASE_URL=http://llama:8080/v1
+      - PYTHONUNBUFFERED=1
+      - DB_NAME=lawchat
+      - DB_USER=django
+      - DB_PASSWORD=django123
+      - DB_HOST=mysql
+      - DB_PORT=3306
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8.0
+    container_name: lawchat-mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpass123
+      - MYSQL_DATABASE=lawchat
+      - MYSQL_USER=django
+      - MYSQL_PASSWORD=django123
+    ports:
+      - "3306:3306"        # chỉ cần nếu muốn connect từ host
+    volumes:
+      - ./mysql_data:/var/lib/mysql
+    command: [
+      "--default-authentication-plugin=mysql_native_password",
+      "--character-set-server=utf8mb4",
+      "--collation-server=utf8mb4_unicode_ci"
+    ]
+    restart: unless-stopped
