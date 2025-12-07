@@ -1,2 +1,3 @@
-core
-model
+core/models
+core/hf_cache
+core/chroma_db
