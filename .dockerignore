@@ -1,26 +1,46 @@
-**/__pycache__
-**/*.pyc
-**/*.pyo
-**/*.pyd
-.Python
+# Thư mục MySQL data (quan trọng nhất)
+mysql_data/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
 *.so
-*.egg
-*.egg-info
-dist
-build
-.git
+.Python
+
+# Virtual environment
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Git
+.git/
 .gitignore
-.vscode
-.idea
-*.md
-.env
-venv
-env
+
+# Docker
+.dockerignore
+Dockerfile
+docker-compose.yml
+
+# Logs
 *.log
-*.sqlite3
-db.sqlite3
+
+# OS
 .DS_Store
-core/hf_cache
-core/chroma_db
-core/models/.cache
-D:\lawchater\lawchater_be\.dockerignore
+Thumbs.db
+
+# Chroma DB (nếu không cần copy vào image)
+# core/chroma_db/
+
+# HuggingFace cache (nếu không cần copy vào image)
+# core/hf_cache/
+
+# Model files lớn (nếu bạn mount từ host)
+# *.gguf
+# *.bin

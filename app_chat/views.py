@@ -12,9 +12,9 @@ from .serializers import (
     ChatRequestSerializer,
 )
 
-# from core.app import get_rag_service  # bạn đã có sẵn rag_service
+from core.app import get_rag_service  # bạn đã có sẵn rag_service
 
-# rag_service = get_rag_service()
+rag_service = get_rag_service()
 class ConversationViewSet(viewsets.ModelViewSet):
     """
     CRUD Conversation:
@@ -68,76 +68,76 @@ def chat_with_rag(request):
       "k": 3                  // optional
     }
     """
-    # serializer = ChatRequestSerializer(data=request.data)
-    # serializer.is_valid(raise_exception=True)
-    # data = serializer.validated_data
+    serializer = ChatRequestSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    data = serializer.validated_data
 
-    # message_text = data["message"]
-    # conversation_id = data.get("conversation_id")
-    # k = data.get("k", 3)
+    message_text = data["message"]
+    conversation_id = data.get("conversation_id")
+    k = data.get("k", 3)
 
-    # # 1. Lấy / tạo conversation
-    # if conversation_id:
-    #     conv = get_object_or_404(
-    #         Conversation, id=conversation_id, user=request.user
-    #     )
-    # else:
-    #     conv = Conversation.objects.create(
-    #         user=request.user,
-    #         title=message_text[:60],
-    #     )
+    # 1. Lấy / tạo conversation
+    if conversation_id:
+        conv = get_object_or_404(
+            Conversation, id=conversation_id, user=request.user
+        )
+    else:
+        conv = Conversation.objects.create(
+            user=request.user,
+            title=message_text[:60],
+        )
 
-    # # 2. Lưu message bên user
-    # user_msg = Message.objects.create(
-    #     conversation=conv,
-    #     role="user",
-    #     content=message_text,
-    # )
-
-    # # 3. Gọi RAG
-    # result = rag_service.query(question=message_text, k=k)
-    # answer = result.get("answer", "")
-    # sources = result.get("sources", [])
-
-    # # 4. Lưu message bên assistant
-    # assistant_msg = Message.objects.create(
-    #     conversation=conv,
-    #     role="assistant",
-    #     content=answer,
-    #     meta={"sources": sources},
-    # )
-
-    # conv.save()  # update updated_at
-
-    # return Response(
-    #     {
-    #         "conversation_id": conv.id,
-    #         "question": message_text,
-    #         "answer": answer,
-    #         "sources": sources,
-    #         "messages": {
-    #             "user": MessageSerializer(user_msg).data,
-    #             "assistant": MessageSerializer(assistant_msg).data,
-    #         },
-    #     },
-    #     status=status.HTTP_200_OK,
-    # )
-    return Response({
-        "question": "Tôi ly hôn thì mất bao nhiêu tiền?",
-        "answer": "… câu trả lời dài …",
-        "sources": [
-            {
-            "content": "Điều 68. Tuyên bố mất tích…",
-            "metadata": {
-                "source": "/app/core/data/BLDS.docx"
-            }
-            },
-            {
-            "content": "Điều 68. Tuyên bố mất tích…",
-            "metadata": {
-                "source": "/app/core/data/BLDS.docx"
-            }
-            }
-        ]
-        }
+    # 2. Lưu message bên user
+    user_msg = Message.objects.create(
+        conversation=conv,
+        role="user",
+        content=message_text,
     )
+
+    # 3. Gọi RAG
+    result = rag_service.query(question=message_text, k=k)
+    answer = result.get("answer", "")
+    sources = result.get("sources", [])
+
+    # 4. Lưu message bên assistant
+    assistant_msg = Message.objects.create(
+        conversation=conv,
+        role="assistant",
+        content=answer,
+        meta={"sources": sources},
+    )
+
+    conv.save()  # update updated_at
+
+    return Response(
+        {
+            "conversation_id": conv.id,
+            "question": message_text,
+            "answer": answer,
+            "sources": sources,
+            "messages": {
+                "user": MessageSerializer(user_msg).data,
+                "assistant": MessageSerializer(assistant_msg).data,
+            },
+        },
+        status=status.HTTP_200_OK,
+    )
+    # return Response({
+    #     "question": "Tôi ly hôn thì mất bao nhiêu tiền?",
+    #     "answer": "… câu trả lời dài …",
+    #     "sources": [
+    #         {
+    #         "content": "Điều 68. Tuyên bố mất tích…",
+    #         "metadata": {
+    #             "source": "/app/core/data/BLDS.docx"
+    #         }
+    #         },
+    #         {
+    #         "content": "Điều 68. Tuyên bố mất tích…",
+    #         "metadata": {
+    #             "source": "/app/core/data/BLDS.docx"
+    #         }
+    #         }
+    #     ]
+    #     }
+    # )

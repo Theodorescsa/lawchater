@@ -1,49 +1,36 @@
 services:
-  # llama:
-  #   image: ghcr.io/ggerganov/llama.cpp:server-cuda
-  #   container_name: llama-server
-  #   gpus: all
-  #   command:
-  #     - "-m"
-  #     - "/models/qwen1_5-1_8b-chat-q8_0.gguf"
-  #     - "-c"
-  #     - "4096"
-  #     - "-b"
-  #     - "4096"
-  #     - "-ngl"
-  #     - "99"
-  #     - "--host"
-  #     - "0.0.0.0"
-  #     - "--port"
-  #     - "8080"
-  #   volumes:
-  #     - ./core/models:/models
-  #   ports:
-  #     - "8080:8080"
-  #   restart: unless-stopped
-
+  # --- Service 1: Django App (Chạy cả Web + RAG Engine) ---
   web:
     build: .
     container_name: lawchat-django
-    command: python manage.py runserver 0.0.0.0:8000
+    # Chờ MySQL khởi động xong mới chạy server (dùng script wait hoặc restart policy)
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
     volumes:
       - .:/app
+      # Map folder chứa DB vector để giữ lại dữ liệu sau khi restart
       - ./core/chroma_db:/app/core/chroma_db 
+      # Map folder cache của HuggingFace để không phải tải lại model embedding mỗi lần build
       - ./core/hf_cache:/app/core/hf_cache
+      # Map folder chứa model .gguf (LƯU Ý: Đảm bảo đường dẫn trong code python trỏ đúng vào đây)
+      - ./core:/app/core
     ports:
       - "8000:8000"
     depends_on:
-      # - llama
-      - mysql          # <-- CHỜ MYSQL READY
+      - mysql
     environment:
+      # Không cần LLM_BASE_URL nữa vì chạy local
       - HF_HOME=/app/core/hf_cache
-      - LLM_BASE_URL=http://llama:8080/v1
       - PYTHONUNBUFFERED=1
+      # Cấu hình DB
       - DB_NAME=lawchat
       - DB_USER=django
       - DB_PASSWORD=django123
       - DB_HOST=mysql
       - DB_PORT=3306
+      # Cấu hình LlamaCpp (Tùy chọn, giúp debug nếu model không load được GPU)
+      - CUDA_VISIBLE_DEVICES=0
+    
+    # --- CẤU HÌNH GPU CHO DJANGO ---
     deploy:
       resources:
         reservations:
@@ -53,6 +40,7 @@ services:
               capabilities: [gpu]
     restart: unless-stopped
 
+  # --- Service 2: Database (Giữ nguyên) ---
   mysql:
     image: mysql:8.0
     container_name: lawchat-mysql
@@ -62,7 +50,7 @@ services:
       - MYSQL_USER=django
       - MYSQL_PASSWORD=django123
     ports:
-      - "3306:3306"        # chỉ cần nếu muốn connect từ host
+      - "3307:3306"
     volumes:
       - ./mysql_data:/var/lib/mysql
     command: [

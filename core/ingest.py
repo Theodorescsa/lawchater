@@ -1,4 +1,5 @@
 import os
+import shutil
 from pathlib import Path
 from langchain_community.document_loaders import PyPDFLoader, Docx2txtLoader, DirectoryLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -7,116 +8,75 @@ from langchain_chroma import Chroma
 
 os.environ["ANONYMIZED_TELEMETRY"] = "False"
 
-# Lấy đường dẫn tuyệt đối của thư mục core
+# Xác định đường dẫn
 BASE_DIR = Path(__file__).resolve().parent
-
 DATA_PATH = str(BASE_DIR / "data")
 PERSIST_PATH = str(BASE_DIR / "chroma_db")
 COLLECTION_NAME = "law_docs"
 EMBEDDING_MODEL_NAME = "intfloat/multilingual-e5-small"
 
 def main():
-    print("Bắt đầu quá trình nạp dữ liệu...")
-    print(f"Đường dẫn data: {DATA_PATH}")
-    print(f"Đường dẫn persist: {PERSIST_PATH}")
+    print("🚀 Bắt đầu nạp dữ liệu (Ingest)...")
     
-    # Kiểm tra thư mục data có tồn tại không
     if not os.path.exists(DATA_PATH):
-        print(f"❌ LỖI: Thư mục '{DATA_PATH}' không tồn tại!")
+        print(f"❌ Lỗi: Không tìm thấy folder data tại {DATA_PATH}")
         return
-    
-    # Liệt kê các file trong thư mục data
-    print(f"\nCác file trong thư mục data:")
-    for file in os.listdir(DATA_PATH):
-        print(f"  - {file}")
-    print()
 
-    # --- Tải tài liệu ---
+    # 1. Load Documents
     documents = []
+    def load_docs(glob, loader_cls):
+        loader = DirectoryLoader(DATA_PATH, glob=glob, loader_cls=loader_cls, show_progress=True)
+        try: return loader.load()
+        except: return []
+
+    documents.extend(load_docs("**/*.pdf", PyPDFLoader))
+    documents.extend(load_docs("**/*.docx", Docx2txtLoader))
     
-    def load_docs(glob_pattern, loader_cls, label):
-        print(f"Đang tải file {label} từ '{DATA_PATH}'...")
-        loader = DirectoryLoader(
-            DATA_PATH,
-            glob=glob_pattern,
-            loader_cls=loader_cls,
-            use_multithreading=True,
-            show_progress=True
-        )
-        try:
-            docs = loader.load()
-            print(f"✅ Đã tải {len(docs)} tài liệu {label}")
-            return docs
-        except Exception as e:
-            print(f"⚠️ Lỗi khi tải {label}: {e}")
-            return []
-
-    documents.extend(load_docs("**/*.pdf", PyPDFLoader, "PDF"))
-    documents.extend(load_docs("**/*.docx", Docx2txtLoader, "DOCX"))
-    documents.extend(load_docs("**/*.doc", Docx2txtLoader, "DOC"))
-
     if not documents:
-        print(f"❌ Không tìm thấy tài liệu nào trong thư mục '{DATA_PATH}'.")
-        print("Vui lòng kiểm tra lại đường dẫn và các file.")
+        print("❌ Folder data rỗng.")
         return
 
-    print(f"\n✅ Đã tải thành công {len(documents)} tài liệu.")
-    print(f"Tổng số ký tự: {sum(len(doc.page_content) for doc in documents)}")
+    # 2. Tiền xử lý (Thêm tên file vào nội dung)
+    print("🛠️ Đang xử lý metadata...")
+    for doc in documents:
+        source_file = os.path.basename(doc.metadata.get('source', ''))
+        doc.metadata['source_name'] = source_file
+        # Gắn tên file vào nội dung để chunk nào cũng biết mình thuộc luật nào
+        doc.page_content = f"Tài liệu: {source_file}\n{doc.page_content}"
 
-    print("\nĐang chia tài liệu thành các mảnh theo 'Điều'...")
-    
-    logical_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=2000,
+    # 3. Chia nhỏ (Split)
+    print("✂️ Đang chia nhỏ văn bản...")
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=2000, 
         chunk_overlap=200,
         separators=["\n\nĐiều ", "\nĐiều ", "Điều "],
         keep_separator=True
     )
-    
-    chunks_with_preamble = logical_splitter.split_documents(documents)
-    
+    chunks = splitter.split_documents(documents)
+
+    # 4. Thêm prefix cho E5 Model
     final_chunks = []
-    for chunk in chunks_with_preamble:
-        content = chunk.page_content.lstrip()
-        if content.startswith("Điều "):
-            chunk.page_content = content
-            final_chunks.append(chunk)
+    for chunk in chunks:
+        # Bắt buộc cho model intfloat/multilingual-e5-small
+        chunk.page_content = f"passage: {chunk.page_content}"
+        final_chunks.append(chunk)
 
-    if not final_chunks:
-        print("⚠️ CẢNH BÁO: Không tìm thấy 'Điều ' nào trong văn bản.")
-        print("Sử dụng tất cả các chunks...")
-        final_chunks = chunks_with_preamble
+    # 5. Embedding & Lưu vào ChromaDB
+    print("💾 Đang ghi vào Database...")
+    embedding = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME, model_kwargs={'device': 'cpu'})
+    
+    # Xóa DB cũ nếu có để làm sạch
+    if os.path.exists(PERSIST_PATH):
+        shutil.rmtree(PERSIST_PATH)
 
-    print(f"✅ Đã chia thành {len(final_chunks)} mảnh logic.")
-
-    print(f"\nĐang tải mô hình embedding '{EMBEDDING_MODEL_NAME}'...")
-    embedding_model = HuggingFaceEmbeddings(
-        model_name=EMBEDDING_MODEL_NAME,
-        model_kwargs={'device': 'cuda'}
+    Chroma.from_documents(
+        documents=final_chunks, 
+        embedding=embedding, 
+        collection_name=COLLECTION_NAME, 
+        persist_directory=PERSIST_PATH
     )
-    print("✅ Đã tải embedding model")
-
-    print(f"\nĐang ghi dữ liệu vào ChromaDB (collection: {COLLECTION_NAME})...")
-    print("⏳ Quá trình này có thể mất vài phút...")
-
-    try:
-        vectorstore = Chroma.from_documents(
-            documents=final_chunks,            
-            embedding=embedding_model,          
-            collection_name=COLLECTION_NAME,    
-            persist_directory=PERSIST_PATH    
-        )
-        print("✅ Đã ghi dữ liệu vào ChromaDB")
-    except Exception as e:
-        print(f"❌ Lỗi khi ghi vào ChromaDB: {e}")
-        import traceback
-        traceback.print_exc()
-        return
-
-    print("\n" + "=" * 60)
-    print(f"🎉 Hoàn tất! Dữ liệu đã được lưu vào '{PERSIST_PATH}'")
-    print(f"📊 Tổng số chunks: {len(final_chunks)}")
-    print(f"📚 Collection name: {COLLECTION_NAME}")
-    print("=" * 60)
+    
+    print(f"✅ Hoàn tất! Đã lưu {len(final_chunks)} chunks vào {PERSIST_PATH}")
 
 if __name__ == "__main__":
     main()
