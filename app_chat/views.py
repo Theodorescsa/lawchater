@@ -53,8 +53,61 @@ class MessageViewSet(viewsets.ReadOnlyModelViewSet):
             Conversation, id=conversation_id, user=self.request.user
         )
         return conv.messages.all()
-
-
+from drf_spectacular.utils import extend_schema, OpenApiExample
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+@extend_schema(
+    summary="Chat với RAG (có lưu lịch sử)",
+    description="""
+    API chat với hệ thống RAG.
+    
+    - Tự động tạo conversation nếu không truyền `conversation_id`
+    - Lưu lịch sử chat (user / assistant)
+    - Trả về nguồn tài liệu (sources)
+    """,
+    request=ChatRequestSerializer,
+    responses={
+        200: {
+            "type": "object",
+            "properties": {
+                "conversation_id": {"type": "integer"},
+                "question": {"type": "string"},
+                "answer": {"type": "string"},
+                "sources": {"type": "array", "items": {"type": "object"}},
+                "messages": {
+                    "type": "object",
+                    "properties": {
+                        "user": {"type": "object"},
+                        "assistant": {"type": "object"},
+                    },
+                },
+            },
+        }
+    },
+    examples=[
+        OpenApiExample(
+            name="Ví dụ request",
+            value={
+                "message": "Luật đất đai 2023 quy định thế nào?",
+                "conversation_id": 1,
+                "k": 3,
+            },
+            request_only=True,
+        ),
+        OpenApiExample(
+            name="Ví dụ response",
+            value={
+                "conversation_id": 1,
+                "question": "Luật đất đai 2023 quy định thế nào?",
+                "answer": "Theo Luật Đất đai 2023 ...",
+                "sources": [
+                    {"title": "Luật Đất đai 2023", "page": 12}
+                ],
+            },
+            response_only=True,
+        ),
+    ],
+)
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def chat_with_rag(request):

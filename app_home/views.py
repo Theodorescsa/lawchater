@@ -1,10 +1,10 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-# from core.app import get_rag_service
+from core.app import get_rag_service
 from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiParameter, OpenApiResponse
 import logging
-# rag_service = get_rag_service()
+rag_service = get_rag_service()
 
 logger = logging.getLogger(__name__)
 @extend_schema(
@@ -39,25 +39,25 @@ logger = logging.getLogger(__name__)
 )
 @api_view(['POST'])
 def chat(request):
-    return Response({
-        "question": "Tôi ly hôn thì mất bao nhiêu tiền?",
-        "answer": "… câu trả lời dài …",
-        "sources": [
-            {
-            "content": "Điều 68. Tuyên bố mất tích…",
-            "metadata": {
-                "source": "/app/core/data/BLDS.docx"
-            }
-            },
-            {
-            "content": "Điều 68. Tuyên bố mất tích…",
-            "metadata": {
-                "source": "/app/core/data/BLDS.docx"
-            }
-            }
-        ]
-        }
-    )
+    # return Response({
+    #     "question": "Tôi ly hôn thì mất bao nhiêu tiền?",
+    #     "answer": "… câu trả lời dài …",
+    #     "sources": [
+    #         {
+    #         "content": "Điều 68. Tuyên bố mất tích…",
+    #         "metadata": {
+    #             "source": "/app/core/data/BLDS.docx"
+    #         }
+    #         },
+    #         {
+    #         "content": "Điều 68. Tuyên bố mất tích…",
+    #         "metadata": {
+    #             "source": "/app/core/data/BLDS.docx"
+    #         }
+    #         }
+    #     ]
+    #     }
+    # )
     # """
     # API endpoint để chat với RAG system
     
@@ -74,40 +74,40 @@ def chat(request):
     #     "question": "Câu hỏi gốc"
     # }
     # """
-    # try:
-    #     question = request.data.get('question', '').strip()
-    #     k = request.data.get('k', 3)
+    try:
+        question = request.data.get('question', '').strip()
+        k = request.data.get('k', 3)
         
-    #     if not question:
-    #         return Response(
-    #             {'error': 'Vui lòng cung cấp câu hỏi'},
-    #             status=status.HTTP_400_BAD_REQUEST
-    #         )
+        if not question:
+            return Response(
+                {'error': 'Vui lòng cung cấp câu hỏi'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         
-    #     # Gọi RAG service
-    #     result = rag_service.query(question=question, k=k)
+        # Gọi RAG service
+        result = rag_service.query(question=question, k=k)
         
-    #     # Kiểm tra lỗi
-    #     if 'error' in result and result.get('answer') == 'Đã xảy ra lỗi khi xử lý câu hỏi. Vui lòng thử lại sau.':
-    #         return Response(
-    #             {
-    #                 'error': result['error'],
-    #                 'answer': result['answer']
-    #             },
-    #             status=status.HTTP_500_INTERNAL_SERVER_ERROR
-    #         )
+        # Kiểm tra lỗi
+        if 'error' in result and result.get('answer') == 'Đã xảy ra lỗi khi xử lý câu hỏi. Vui lòng thử lại sau.':
+            return Response(
+                {
+                    'error': result['error'],
+                    'answer': result['answer']
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
         
-    #     return Response({
-    #         'question': question,
-    #         'answer': result['answer'],
-    #         'sources': result['sources'],
-    #     })
+        return Response({
+            'question': question,
+            'answer': result['answer'],
+            'sources': result['sources'],
+        })
         
-    # except Exception as e:
-    #     return Response(
-    #         {'error': str(e)},
-    #         status=status.HTTP_500_INTERNAL_SERVER_ERROR
-    #     )
+    except Exception as e:
+        return Response(
+            {'error': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
 @extend_schema(
     responses={

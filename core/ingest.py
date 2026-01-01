@@ -65,9 +65,18 @@ def main():
     print("💾 Đang ghi vào Database...")
     embedding = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME, model_kwargs={'device': 'cpu'})
     
-    # Xóa DB cũ nếu có để làm sạch
+#    Xóa DB cũ nếu có để làm sạch (FIX LỖI DEVICE BUSY)
     if os.path.exists(PERSIST_PATH):
-        shutil.rmtree(PERSIST_PATH)
+        # Thay vì xóa thư mục (gây lỗi nếu là mount point), ta xóa nội dung bên trong
+        for filename in os.listdir(PERSIST_PATH):
+            file_path = os.path.join(PERSIST_PATH, filename)
+            try:
+                if os.path.isfile(file_path) or os.path.islink(file_path):
+                    os.unlink(file_path)  # Xóa file
+                elif os.path.isdir(file_path):
+                    shutil.rmtree(file_path)  # Xóa thư mục con
+            except Exception as e:
+                print(f"⚠️ Cảnh báo: Không thể xóa {file_path}. Lỗi: {e}")
 
     Chroma.from_documents(
         documents=final_chunks, 

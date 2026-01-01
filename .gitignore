@@ -1,3 +1,4 @@
 core/models
 core/hf_cache
 core/chroma_db
+mysql_data
