@@ -31,6 +31,7 @@ ALLOWED_HOSTS = ["*"]
 # Application definition
 
 INSTALLED_APPS = [
+    "jazzmin",
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -135,8 +136,9 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-STATIC_URL = 'static/'
-STATIC_ROOT = BASE_DIR / "static_root"
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
 
 MEDIA_ROOT = BASE_DIR / "core" / "data"
 MEDIA_URL = "/media/"
@@ -160,4 +162,45 @@ RAG_CONFIG = {
     'COLLECTION_NAME': 'law_docs',
     'DATA_PATH': './core/data',
     'LLM_BASE_URL': 'http://llama:8080/v1',
+}
+JAZZMIN_SETTINGS = {
+    "site_title": "Admin System",
+    "site_header": "My Django Admin",
+    "site_brand": "MyApp",
+    "welcome_sign": "Welcome to the admin panel",
+    "copyright": "My Company",
+
+    # Logo
+    "site_logo": "img/logo.png",      # static/img/logo.png
+    "login_logo": None,
+    "site_logo_classes": "img-circle",
+
+    # Top Menu
+    "topmenu_links": [
+        {"name": "Home", "url": "admin:index", "permissions": ["auth.view_user"]},
+        {"name": "Website", "url": "/", "new_window": True},
+    ],
+
+    # Sidebar
+    "show_sidebar": True,
+    "navigation_expanded": True,
+
+    # Icons
+    "icons": {
+        "auth": "fas fa-users-cog",
+        "auth.user": "fas fa-user",
+        "auth.Group": "fas fa-users",
+    },
+
+    # Default icon
+    "default_icon_parents": "fas fa-chevron-circle-right",
+    "default_icon_children": "fas fa-circle",
+}
+JAZZMIN_UI_TWEAKS = {
+    "theme": "darkly",  # cosmo, flatly, darkly, lumen...
+    "dark_mode_theme": "darkly",
+    "navbar": "navbar-dark",
+    "sidebar": "sidebar-dark-primary",
+    "accent": "accent-primary",
+    "brand_colour": "navbar-primary",
 }

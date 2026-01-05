@@ -123,6 +123,7 @@ Câu trả lời:"""
 
     def get_source_filter(self, query):
         """Logic lọc file thông minh dựa trên từ khóa"""
+        # return None
         query_lower = query.lower()
         target_files = set()
 
@@ -157,13 +158,28 @@ Câu trả lời:"""
 
     def advanced_retrieval(self, query, metadata_filter, top_k_final=3):
         """Vector Search -> Cross-Encoder Rerank"""
+        
+        # --- DEBUG LOG START ---
+        print(f"\n--- 🔍 DEBUG SEARCH ---")
+        print(f"Query: {query}")
+        print(f"Filter đang dùng: {metadata_filter}")
+        # --- DEBUG LOG END ---
+
         # B1: Lấy rộng (top 15)
         initial_docs = self.vectorstore.similarity_search(
             f"query: {query}", 
             k=15, 
             filter=metadata_filter
         )
-        if not initial_docs: return []
+        
+        # --- DEBUG LOG CHECK VECTOR ---
+        print(f"✅ Tìm thấy {len(initial_docs)} tài liệu từ Vector Store.")
+        if not initial_docs:
+            print("❌ Vector Store trả về rỗng! -> Kiểm tra lại dữ liệu đã ingest chưa.")
+            return []
+        else:
+            print(f"📄 Ví dụ doc đầu tiên: {initial_docs[0].page_content[:100]}...")
+        # --- DEBUG LOG END ---
 
         # B2: Rerank
         doc_contents = [self.clean_text(d.page_content) for d in initial_docs]
@@ -174,11 +190,14 @@ Câu trả lời:"""
         scored_docs = sorted(zip(initial_docs, scores), key=lambda x: x[1], reverse=True)
         final_docs = []
         
+        print("📊 Điểm số Rerank:") # Debug
         for doc, score in scored_docs[:top_k_final]:
+            print(f" - Score: {score:.4f} | Source: {doc.metadata.get('source_name')}") # Debug
             if score > -5.0: # Ngưỡng chấp nhận
                 doc.metadata['score'] = float(score)
                 final_docs.append(doc)
-                
+        
+        print(f"✅ Kết quả cuối cùng trả về: {len(final_docs)} docs")
         return final_docs
 
     # --- HÀM CHÍNH ĐƯỢC API GỌI ---
