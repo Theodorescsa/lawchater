@@ -27,9 +27,17 @@ class ConversationViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Conversation.objects.filter(
-            user=self.request.user
-        ).order_by("-updated_at")
+        user = self.request.user
+        
+        # Nếu là Admin (Staff) -> Xem tất cả, sắp xếp mới nhất
+        if user.is_superuser:
+            return Conversation.objects.all().order_by("-updated_at")
+        
+        # Nếu là User thường -> Chỉ xem conversation của chính mình
+        return Conversation.objects.filter(user=user).order_by("-updated_at")
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
     def get_serializer_class(self):
         if self.action == "list":
@@ -49,9 +57,17 @@ class MessageViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         conversation_id = self.kwargs["conversation_id"]
-        conv = get_object_or_404(
-            Conversation, id=conversation_id, user=self.request.user
-        )
+        user = self.request.user
+
+        if user.is_staff:
+            # Nếu là Admin: Chỉ cần tìm Conversation theo ID (không quan tâm user nào)
+            conv = get_object_or_404(Conversation, id=conversation_id)
+        else:
+            # Nếu là User thường: Phải khớp ID và user sở hữu phải là request.user
+            conv = get_object_or_404(
+                Conversation, id=conversation_id, user=user
+            )
+            
         return conv.messages.all()
 from drf_spectacular.utils import extend_schema, OpenApiExample
 from rest_framework.decorators import api_view, permission_classes

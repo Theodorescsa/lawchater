@@ -1,0 +1,127 @@
+/* Ép widget selector bung hết cỡ */
+.selector {
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+}
+
+/* Cấu hình cho 2 cột Trái (Available) và Phải (Chosen) */
+.selector .selector-available, 
+.selector .selector-chosen {
+    flex: 1;             /* Chia đều không gian */
+    width: 45% !important; 
+    margin: 0 !important;
+    padding: 0 !important;
+    float: none !important;
+}
+
+/* Can thiệp trực tiếp vào thẻ SELECT (cái bảng trắng) */
+.selector select {
+    width: 100% !important;     /* Bung hết chiều ngang của cột */
+    min-height: 300px !important; /* Tăng chiều cao lên 300px cho dễ nhìn */
+    height: auto !important;
+    font-size: 13px !important; /* Chữ nhỏ lại một chút để hiển thị được nhiều hơn */
+    border: 1px solid #dcdcdc;
+    border-radius: 4px;
+    padding: 8px;
+    background-color: #fff;
+    overflow-x: auto; /* Cho phép cuộn ngang nếu chữ quá dài */
+}
+
+/* Cấu hình cột giữa chứa mấy mũi tên */
+.selector ul.selector-chooser {
+    flex-basis: 50px;    /* Chiều rộng cố định cho cột giữa */
+    flex-shrink: 0;      /* Không bị co lại */
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0 5px !important;
+    margin: 0 !important;
+    background: transparent !important;
+    transform: translateY(0) !important;
+}
+
+/* Style lại nút mũi tên cho đẹp & nằm giữa */
+.selector-chooser li {
+    margin: 5px 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    background: none !important;
+    list-style: none !important;
+}
+
+.selector-chooser li a {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background-color: #3498db; /* Màu xanh của theme */
+    border-radius: 50%;
+    position: relative;
+    opacity: 1 !important;
+    text-decoration: none;
+    transition: background 0.3s;
+}
+
+.selector-chooser li a:hover {
+    background-color: #2980b9;
+}
+
+/* Vẽ mũi tên bằng CSS */
+.selector-add, .selector-remove {
+    background-image: none !important; /* Xóa ảnh mặc định của Django */
+}
+
+.selector-chooser li a::after {
+    content: '';
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    display: inline-block;
+    padding: 3px;
+}
+
+/* Mũi tên sang phải */
+.selector-add::after {
+    transform: rotate(-45deg);
+    margin-right: 2px;
+}
+
+/* Mũi tên sang trái */
+.selector-remove::after {
+    transform: rotate(135deg);
+    margin-left: 2px;
+}
+
+/* Ẩn các icon help thừa thãi gây lệch dòng */
+.selector .help-icon {
+    display: none !important;
+}
+
+/* Chỉnh lại tiêu đề "Available..." và "Chosen..." */
+.selector h2 {
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    color: #444;
+    margin-bottom: 8px !important;
+    margin-top: 0 !important;
+    display: block !important;
+    text-align: left;
+}
+
+/* Chỉnh lại ô Filter (ô tìm kiếm nhỏ) */
+.selector .selector-filter {
+    border: 1px solid #ddd;
+    border-bottom: none;
+    padding: 5px;
+    background: #f8f9fa;
+    border-radius: 4px 4px 0 0;
+}
+.selector .selector-filter input {
+    width: 100% !important;
+    margin-bottom: 0 !important;
+}

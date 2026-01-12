@@ -16,10 +16,10 @@ COLLECTION_NAME = "law_docs"
 EMBEDDING_MODEL_NAME = "intfloat/multilingual-e5-small"
 
 def main():
-    print("🚀 Bắt đầu nạp dữ liệu (Ingest)...")
+    print(" Bắt đầu nạp dữ liệu (Ingest)...")
     
     if not os.path.exists(DATA_PATH):
-        print(f"❌ Lỗi: Không tìm thấy folder data tại {DATA_PATH}")
+        print(f" Lỗi: Không tìm thấy folder data tại {DATA_PATH}")
         return
 
     # 1. Load Documents
@@ -33,11 +33,11 @@ def main():
     documents.extend(load_docs("**/*.docx", Docx2txtLoader))
     
     if not documents:
-        print("❌ Folder data rỗng.")
+        print(" Folder data rỗng.")
         return
 
     # 2. Tiền xử lý (Thêm tên file vào nội dung)
-    print("🛠️ Đang xử lý metadata...")
+    print(" Đang xử lý metadata...")
     for doc in documents:
         source_file = os.path.basename(doc.metadata.get('source', ''))
         doc.metadata['source_name'] = source_file
@@ -45,7 +45,7 @@ def main():
         doc.page_content = f"Tài liệu: {source_file}\n{doc.page_content}"
 
     # 3. Chia nhỏ (Split)
-    print("✂️ Đang chia nhỏ văn bản...")
+    print(" Đang chia nhỏ văn bản...")
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=2000, 
         chunk_overlap=200,
@@ -62,7 +62,7 @@ def main():
         final_chunks.append(chunk)
 
     # 5. Embedding & Lưu vào ChromaDB
-    print("💾 Đang ghi vào Database...")
+    print(" Đang ghi vào Database...")
     embedding = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME, model_kwargs={'device': 'cpu'})
     
 #    Xóa DB cũ nếu có để làm sạch (FIX LỖI DEVICE BUSY)
@@ -76,7 +76,7 @@ def main():
                 elif os.path.isdir(file_path):
                     shutil.rmtree(file_path)  # Xóa thư mục con
             except Exception as e:
-                print(f"⚠️ Cảnh báo: Không thể xóa {file_path}. Lỗi: {e}")
+                print(f" Cảnh báo: Không thể xóa {file_path}. Lỗi: {e}")
 
     Chroma.from_documents(
         documents=final_chunks, 
@@ -85,7 +85,7 @@ def main():
         persist_directory=PERSIST_PATH
     )
     
-    print(f"✅ Hoàn tất! Đã lưu {len(final_chunks)} chunks vào {PERSIST_PATH}")
+    print(f" Hoàn tất! Đã lưu {len(final_chunks)} chunks vào {PERSIST_PATH}")
 
 if __name__ == "__main__":
     main()

@@ -31,3 +31,4 @@ drf-spectacular-sidecar
 djangorestframework-simplejwt
 mysqlclient
 django-jazzmin
+pysqlite3-binary

@@ -11,7 +11,7 @@ PERSIST_PATH = str(BASE_DIR / "chroma_db")
 COLLECTION_NAME = "law_docs"
 EMBEDDING_MODEL = "intfloat/multilingual-e5-small"
 
-print(f"📂 Checking DB at: {PERSIST_PATH}")
+print(f" Checking DB at: {PERSIST_PATH}")
 
 try:
     embedding = HuggingFaceEmbeddings(
@@ -26,10 +26,10 @@ try:
     )
     
     count = vectorstore._collection.count()
-    print(f"✅ KẾT QUẢ: Trong DB hiện có {count} chunks.")
+    print(f" KẾT QUẢ: Trong DB hiện có {count} chunks.")
     
     if count == 0:
-        print("⚠️ CẢNH BÁO: DB rỗng! Bạn cần vào Admin Django -> Chọn tài liệu -> Action 'Ingest selected documents' lại.")
+        print(" CẢNH BÁO: DB rỗng! Bạn cần vào Admin Django -> Chọn tài liệu -> Action 'Ingest selected documents' lại.")
         
 except Exception as e:
-    print(f"❌ LỖI: {e}")
+    print(f" LỖI: {e}")

@@ -27,7 +27,7 @@ class RAGService:
             self._initialized = True
 
     def _initialize(self):
-        print("🔥 Đang khởi tạo LawChatter RAG Engine (LlamaCpp + Rerank)...")
+        print(" Đang khởi tạo LawChatter RAG Engine (LlamaCpp + Rerank)...")
         
         # --- CẤU HÌNH ĐƯỜNG DẪN ---
         # Lấy đường dẫn thư mục 'core' hiện tại
@@ -44,16 +44,16 @@ class RAGService:
 
         # Kiểm tra file model tồn tại chưa
         if not os.path.exists(self.MODEL_PATH):
-            raise FileNotFoundError(f"❌ Lỗi: Không tìm thấy model tại {self.MODEL_PATH}. Vui lòng kiểm tra folder core/models/")
+            raise FileNotFoundError(f" Lỗi: Không tìm thấy model tại {self.MODEL_PATH}. Vui lòng kiểm tra folder core/models/")
 
         # 1. Khởi tạo LLM (LlamaCpp)
-        print(f"⏳ Loading LLM from {self.MODEL_PATH}...")
+        print(f" Loading LLM from {self.MODEL_PATH}...")
         self.llm = LlamaCpp(
             model_path=self.MODEL_PATH,
             n_gpu_layers=-1,      # Đẩy 100% layers lên GPU
             n_batch=512,
             n_ctx=4096,
-            max_tokens=2048,
+            max_tokens=5000,
             temperature=0.1,
             top_p=0.9,
             repeat_penalty=1.15,
@@ -62,7 +62,7 @@ class RAGService:
         )
 
         # 2. Embedding & Vector Store
-        print("⏳ Loading Embedding Model...")
+        print(" Loading Embedding Model...")
         self.embedding_model = HuggingFaceEmbeddings(
             model_name=self.EMBEDDING_MODEL_NAME, 
             model_kwargs={"device": "cpu"} # ChromaDB chạy CPU để tiết kiệm VRAM cho LLM
@@ -75,7 +75,7 @@ class RAGService:
         )
 
         # 3. Reranker (Cross-Encoder)
-        print("⏳ Loading Reranker Model...")
+        print(" Loading Reranker Model...")
         self.reranker = CrossEncoder(self.RERANK_MODEL_NAME)
 
         # 4. Prompt Template (Đã tối ưu cho Qwen/Llama)
@@ -112,7 +112,7 @@ Câu hỏi: {question}
 Câu trả lời:"""
         self.prompt_template = PromptTemplate(input_variables=["context", "question"], template=template)
 
-        print("✅ RAG Service Ready!")
+        print(" RAG Service Ready!")
 
     # --- CÁC HÀM HỖ TRỢ (HELPER) ---
     def clean_text(self, text):
@@ -160,7 +160,7 @@ Câu trả lời:"""
         """Vector Search -> Cross-Encoder Rerank"""
         
         # --- DEBUG LOG START ---
-        print(f"\n--- 🔍 DEBUG SEARCH ---")
+        print(f"\n---  DEBUG SEARCH ---")
         print(f"Query: {query}")
         print(f"Filter đang dùng: {metadata_filter}")
         # --- DEBUG LOG END ---
@@ -173,12 +173,12 @@ Câu trả lời:"""
         )
         
         # --- DEBUG LOG CHECK VECTOR ---
-        print(f"✅ Tìm thấy {len(initial_docs)} tài liệu từ Vector Store.")
+        print(f" Tìm thấy {len(initial_docs)} tài liệu từ Vector Store.")
         if not initial_docs:
-            print("❌ Vector Store trả về rỗng! -> Kiểm tra lại dữ liệu đã ingest chưa.")
+            print(" Vector Store trả về rỗng! -> Kiểm tra lại dữ liệu đã ingest chưa.")
             return []
         else:
-            print(f"📄 Ví dụ doc đầu tiên: {initial_docs[0].page_content[:100]}...")
+            print(f" Ví dụ doc đầu tiên: {initial_docs[0].page_content[:100]}...")
         # --- DEBUG LOG END ---
 
         # B2: Rerank
@@ -190,14 +190,14 @@ Câu trả lời:"""
         scored_docs = sorted(zip(initial_docs, scores), key=lambda x: x[1], reverse=True)
         final_docs = []
         
-        print("📊 Điểm số Rerank:") # Debug
+        print(" Điểm số Rerank:") # Debug
         for doc, score in scored_docs[:top_k_final]:
             print(f" - Score: {score:.4f} | Source: {doc.metadata.get('source_name')}") # Debug
             if score > -5.0: # Ngưỡng chấp nhận
                 doc.metadata['score'] = float(score)
                 final_docs.append(doc)
         
-        print(f"✅ Kết quả cuối cùng trả về: {len(final_docs)} docs")
+        print(f" Kết quả cuối cùng trả về: {len(final_docs)} docs")
         return final_docs
 
     # --- HÀM CHÍNH ĐƯỢC API GỌI ---
@@ -207,6 +207,7 @@ Câu trả lời:"""
             
             # 1. Tìm tài liệu
             metadata_filter = self.get_source_filter(query_str)
+            # metadata_filter = None
             docs = self.advanced_retrieval(query_str, metadata_filter, top_k_final=k)
             
             if not docs:
@@ -235,7 +236,7 @@ Câu trả lời:"""
             return {'answer': answer, 'sources': sources}
 
         except Exception as e:
-            print(f"❌ Error RAG: {e}")
+            print(f" Error RAG: {e}")
             import traceback
             traceback.print_exc()
             return {'answer': 'Lỗi hệ thống khi xử lý câu hỏi.', 'sources': [], 'error': str(e)}

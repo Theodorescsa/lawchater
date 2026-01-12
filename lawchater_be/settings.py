@@ -15,7 +15,13 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+__import__('pysqlite3')
+import sys
+sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+# ------------------------------------------
 
+from pathlib import Path
+import os
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
@@ -139,7 +145,9 @@ USE_TZ = True
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
 MEDIA_ROOT = BASE_DIR / "core" / "data"
 MEDIA_URL = "/media/"
 
@@ -171,7 +179,7 @@ JAZZMIN_SETTINGS = {
     "copyright": "My Company",
 
     # Logo
-    "site_logo": "img/logo.png",      # static/img/logo.png
+    # "site_logo": "img/logo.png",      # static/img/logo.png
     "login_logo": None,
     "site_logo_classes": "img-circle",
 
@@ -191,14 +199,16 @@ JAZZMIN_SETTINGS = {
         "auth.user": "fas fa-user",
         "auth.Group": "fas fa-users",
     },
-
+# Đảm bảo dòng này trỏ đúng file css bạn vừa tạo
+    "custom_css": "css/admin_fix.css",
+    "custom_js": None,
     # Default icon
     "default_icon_parents": "fas fa-chevron-circle-right",
     "default_icon_children": "fas fa-circle",
 }
 JAZZMIN_UI_TWEAKS = {
-    "theme": "darkly",  # cosmo, flatly, darkly, lumen...
-    "dark_mode_theme": "darkly",
+    "theme": "flatly",
+    # "dark_mode_theme": "darkly",
     "navbar": "navbar-dark",
     "sidebar": "sidebar-dark-primary",
     "accent": "accent-primary",
