@@ -21,8 +21,7 @@ RUN apt-get update && apt-get install -y \
     tzdata \
     && rm -rf /var/lib/apt/lists/*
 
-# --- [QUAN TRỌNG] FIX LỖI "python: not found" ---
-# Tạo symlink để gõ 'python' thì hệ thống hiểu là 'python3'
+# --- FIX LỖI "python: not found" ---
 RUN ln -s /usr/bin/python3 /usr/bin/python
 
 # Cấu hình múi giờ
@@ -37,13 +36,15 @@ COPY requirements.txt .
 ENV CMAKE_ARGS="-DGGML_CUDA=on"
 ENV FORCE_CMAKE=1
 
-# --- FIX LỖI LINKING LIBCUDA (STUBS) ---
-ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/lib64/stubs
+# --- [QUAN TRỌNG: ĐÃ XÓA DÒNG ENV LD_LIBRARY_PATH Ở ĐÂY] ---
+# Chỉ giữ lại symlink để hỗ trợ build (nếu cần)
 RUN ln -s /usr/local/cuda/lib64/stubs/libcuda.so /usr/local/cuda/lib64/stubs/libcuda.so.1
 
 # 4. CÀI ĐẶT BẰNG UV
 # Bước 4a: Cài llama-cpp-python
-RUN uv pip install --no-cache llama-cpp-python
+# --- [SỬA LẠI: CHỈ TRỎ VÀO STUBS TRONG CÂU LỆNH NÀY THÔI] ---
+# Lúc build xong thì biến môi trường này tự mất -> Lúc chạy sẽ dùng driver thật
+RUN LD_LIBRARY_PATH=/usr/local/cuda/lib64/stubs uv pip install --no-cache llama-cpp-python
 
 # Bước 4b: Cài các gói còn lại
 RUN uv pip install --no-cache -r requirements.txt
@@ -52,5 +53,4 @@ COPY . .
 
 EXPOSE 8000
 
-# CMD dùng python hoặc python3 đều được vì đã có symlink
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]

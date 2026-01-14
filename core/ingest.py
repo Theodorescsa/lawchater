@@ -1,3 +1,5 @@
+# core/ingest.py
+
 import os
 import shutil
 from pathlib import Path
@@ -8,7 +10,7 @@ from langchain_chroma import Chroma
 
 os.environ["ANONYMIZED_TELEMETRY"] = "False"
 
-# Xác định đường dẫn
+# Xác định đường dẫn (Giữ nguyên format Path của code cũ)
 BASE_DIR = Path(__file__).resolve().parent
 DATA_PATH = str(BASE_DIR / "data")
 PERSIST_PATH = str(BASE_DIR / "chroma_db")
@@ -44,12 +46,18 @@ def main():
         # Gắn tên file vào nội dung để chunk nào cũng biết mình thuộc luật nào
         doc.page_content = f"Tài liệu: {source_file}\n{doc.page_content}"
 
-    # 3. Chia nhỏ (Split)
+    # 3. Chia nhỏ (Split) - CẬP NHẬT LOGIC THEO CODE MỚI
     print(" Đang chia nhỏ văn bản...")
     splitter = RecursiveCharacterTextSplitter(
-        chunk_size=2000, 
-        chunk_overlap=200,
-        separators=["\n\nĐiều ", "\nĐiều ", "Điều "],
+        chunk_size=1024,   # Giảm xuống 1024 theo code mới (tốt cho E5)
+        chunk_overlap=150, # Overlap 150
+        separators=[       # Ưu tiên cắt theo "Điều"
+            "\n\nĐiều ",
+            "\nĐiều ",
+            "Điều ",
+            "\n\n",
+            ". ",
+        ],
         keep_separator=True
     )
     chunks = splitter.split_documents(documents)
@@ -61,11 +69,17 @@ def main():
         chunk.page_content = f"passage: {chunk.page_content}"
         final_chunks.append(chunk)
 
+    print(f" Số lượng chunks sau khi chia: {len(final_chunks)}")
+
     # 5. Embedding & Lưu vào ChromaDB
     print(" Đang ghi vào Database...")
-    embedding = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME, model_kwargs={'device': 'cpu'})
+    # Cập nhật device='cuda' theo code mới để chạy nhanh hơn (nếu có GPU)
+    embedding = HuggingFaceEmbeddings(
+        model_name=EMBEDDING_MODEL_NAME, 
+        model_kwargs={'device': 'cuda'} 
+    )
     
-#    Xóa DB cũ nếu có để làm sạch (FIX LỖI DEVICE BUSY)
+    # Xóa DB cũ nếu có để làm sạch (FIX LỖI DEVICE BUSY - GIỮ NGUYÊN CODE CŨ)
     if os.path.exists(PERSIST_PATH):
         # Thay vì xóa thư mục (gây lỗi nếu là mount point), ta xóa nội dung bên trong
         for filename in os.listdir(PERSIST_PATH):
